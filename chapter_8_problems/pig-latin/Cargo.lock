@@ -3,12 +3,5 @@
 version = 3
 
 [[package]]
-name = "chapter_8_problems"
-version = "0.1.0"
-dependencies = [
- "measures_of_center",
-]
-
-[[package]]
-name = "measures_of_center"
+name = "pig-latin"
 version = "0.1.0"
