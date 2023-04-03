@@ -1,5 +1,13 @@
-use std::{env, error::Error, fs};
+//! # Minigrep
+//! A minimal tool for grepping n' such.
 
+use std::{
+    env::{self},
+    error::Error,
+    fs,
+};
+
+/// A function to run
 pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
     let contents = fs::read_to_string(config.file_path)?;
 
@@ -22,15 +30,27 @@ pub struct Config {
 }
 
 impl Config {
-    pub fn build(args: &[String]) -> Result<Config, &'static str> {
-        if args.len() < 3 {
-            return Err("Please specify two arguments, i.e. minigrep <search_term> <file_name>");
-        }
+    /// Here's a build config impl
+    ///
+    pub fn build(mut args: impl Iterator<Item = String>) -> Result<Config, &'static str> {
+        args.next();
+
+        let query = match args.next() {
+            Some(arg) => arg,
+            None => return Err("Didn't get a query string"),
+        };
+
+        let file_path = match args.next() {
+            Some(arg) => arg,
+            None => return Err("Didn't get a file path"),
+        };
+
+        let ignore_case = env::var("IGNORE_CASE").is_ok();
 
         Ok(Config {
-            query: args[1].clone(),
-            file_path: args[2].clone(),
-            ignore_case: env::var("IGNORE_CASE").is_ok(),
+            query,
+            file_path,
+            ignore_case,
         })
     }
 }
@@ -38,14 +58,35 @@ impl Config {
 // Lifetime parameters specify which lifetime is connected to the lifetime of the return value
 // In this case, we indicate that the returned vector should contain string slices that
 // reference slices of the argument contents (rather than the argument query).
+
+/// This is a search function
+/// # Example
+/// ```
+/// let query = "duct";
+/// let contents = "\
+/// Rust:
+/// safe, fast, productive.
+/// Pick three.
+/// Duct tape.";
+/// assert_eq!(vec!["safe, fast, productive."], minigrep::search(query, contents));
+/// ```
 pub fn search<'a>(query: &str, contents: &'a str) -> Vec<&'a str> {
-    let mut results = Vec::new();
-    for line in contents.lines() {
-        if line.contains(query) {
-            results.push(line);
-        }
-    }
-    results
+    // Imperative method uses mutable state, which should be removed when possible
+    // because if a function doesn't need mutable state then it enables you to do things like parallelism with
+    // multiple threads, etc.
+    // let mut results = Vec::new();
+    // for line in contents.lines() {
+    //     if line.contains(query) {
+    //         results.push(line);
+    //     }
+    // }
+    // results
+
+    // Functional method preferred here
+    contents
+        .lines()
+        .filter(|line| line.contains(query))
+        .collect()
 }
 
 pub fn search_case_insensitive<'a>(query: &str, contents: &'a str) -> Vec<&'a str> {
